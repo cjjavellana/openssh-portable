@@ -219,7 +219,7 @@ tilde_expand_paths(char **paths, u_int num_paths)
 	char *cp;
 
 	for (i = 0; i < num_paths; i++) {
-		cp = tilde_expand_filename(paths[i], getuid());
+		cp = tilde_expand_filename(paths[i], 0);
 		free(paths[i]);
 		paths[i] = cp;
 	}
@@ -621,9 +621,9 @@ main(int ac, char **av)
 	closefrom(STDERR_FILENO + 1);
 
 	/* Get user data. */
-	pw = getpwuid(getuid());
+	pw = getpwuid(0);
 	if (!pw) {
-		logit("No user exists for uid %lu", (u_long)getuid());
+		logit("No user exists for uid %lu", (u_long)0);
 		exit(255);
 	}
 	/* Take a copy of the returned structure. */
@@ -772,7 +772,7 @@ main(int ac, char **av)
 			options.gss_deleg_creds = 1;
 			break;
 		case 'i':
-			p = tilde_expand_filename(optarg, getuid());
+			p = tilde_expand_filename(optarg, 0);
 			if (stat(p, &st) < 0)
 				fprintf(stderr, "Warning: Identity file %s "
 				    "not accessible: %s.\n", p,
@@ -1319,7 +1319,7 @@ main(int ac, char **av)
 	}
 
 	if (options.control_path != NULL) {
-		cp = tilde_expand_filename(options.control_path, getuid());
+		cp = tilde_expand_filename(options.control_path, 0);
 		free(options.control_path);
 		options.control_path = percent_expand(cp,
 		    "C", conn_hash_hex,
@@ -1445,7 +1445,7 @@ main(int ac, char **av)
 			unsetenv(SSH_AUTHSOCKET_ENV_NAME);
 		} else {
 			p = tilde_expand_filename(options.identity_agent,
-			    getuid());
+			    0);
 			cp = percent_expand(p,
 			    "d", pw->pw_dir,
 			    "h", host,
@@ -2049,7 +2049,7 @@ load_public_identity_files(struct passwd *pw)
 			options.identity_files[i] = NULL;
 			continue;
 		}
-		cp = tilde_expand_filename(options.identity_files[i], getuid());
+		cp = tilde_expand_filename(options.identity_files[i], 0);
 		filename = percent_expand(cp, "d", pw->pw_dir,
 		    "u", pw->pw_name, "l", thishost, "h", host,
 		    "r", options.user, (char *)NULL);
@@ -2100,7 +2100,7 @@ load_public_identity_files(struct passwd *pw)
 		fatal("%s: too many certificates", __func__);
 	for (i = 0; i < options.num_certificate_files; i++) {
 		cp = tilde_expand_filename(options.certificate_files[i],
-		    getuid());
+		    0);
 		filename = percent_expand(cp,
 		    "d", pw->pw_dir,
 		    "h", host,
