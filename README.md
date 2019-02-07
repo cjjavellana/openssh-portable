@@ -1,4 +1,4 @@
-# Container native SCP & SSH Implementation
+# Fork to allow scp & ssh to run on containers started as non-root
 Allows usage of native scp & ssh on containers started as non-root users
 
 ## Building from source
