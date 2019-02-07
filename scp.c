@@ -516,8 +516,11 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	//if ((pwd = getpwuid(userid = getuid())) == NULL)
-	//	fatal("unknown user %u", (u_int) userid);
+#ifdef FOR_CONTAINER
+#else
+	if ((pwd = getpwuid(userid = getuid())) == NULL)
+		fatal("unknown user %u", (u_int) userid);
+#endif
 
 	if (!isatty(STDOUT_FILENO))
 		showprogress = 0;
