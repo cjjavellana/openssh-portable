@@ -219,11 +219,7 @@ tilde_expand_paths(char **paths, u_int num_paths)
 	char *cp;
 
 	for (i = 0; i < num_paths; i++) {
-#ifdef FOR_CONTAINER
-		cp = tilde_expand_filename(paths[i], 0);
-#else
-		cp = tilde_expand_filename(paths[i], getuid());
-#endif
+		cp = xstrdup(paths[i]);
 		free(paths[i]);
 		paths[i] = cp;
 	}
@@ -625,11 +621,7 @@ main(int ac, char **av)
 	closefrom(STDERR_FILENO + 1);
 
 	/* Get user data. */
-#ifdef FOR_CONTAINER
 	pw = getpwuid(0);
-#else
-	pw = getpwuid(getuid());
-#endif
 	if (!pw) {
 		logit("No user exists for uid %lu", (u_long)getuid());
 		exit(255);
@@ -780,18 +772,7 @@ main(int ac, char **av)
 			options.gss_deleg_creds = 1;
 			break;
 		case 'i':
-#ifdef FOR_CONTAINER
-			p = tilde_expand_filename(optarg, 0);
-#else
-			p = tilde_expand_filename(optarg, getuid());
-#endif
-			if (stat(p, &st) < 0)
-				fprintf(stderr, "Warning: Identity file %s "
-				    "not accessible: %s.\n", p,
-				    strerror(errno));
-			else
-				add_identity_file(&options, NULL, p, 1);
-			free(p);
+			add_identity_file(&options, NULL, optarg, 1);
 			break;
 		case 'I':
 #ifdef ENABLE_PKCS11
@@ -1331,11 +1312,7 @@ main(int ac, char **av)
 	}
 
 	if (options.control_path != NULL) {
-#ifdef FOR_CONTAINER
-		cp = tilde_expand_filename(options.control_path, 0);
-#else
-		cp = tilde_expand_filename(options.control_path, getuid());
-#endif
+		cp = xstrdup(options.control_path);
 		free(options.control_path);
 		options.control_path = percent_expand(cp,
 		    "C", conn_hash_hex,
@@ -1460,13 +1437,7 @@ main(int ac, char **av)
 		if (strcmp(options.identity_agent, "none") == 0) {
 			unsetenv(SSH_AUTHSOCKET_ENV_NAME);
 		} else {
-#ifdef FOR_CONTAINER
-			p = tilde_expand_filename(options.identity_agent,
-			    0);
-#else
-			p = tilde_expand_filename(options.identity_agent,
-			    getuid());
-#endif
+			p = xstrdup(options.identity_agent);
 			cp = percent_expand(p,
 			    "d", pw->pw_dir,
 			    "h", host,
@@ -2070,11 +2041,7 @@ load_public_identity_files(struct passwd *pw)
 			options.identity_files[i] = NULL;
 			continue;
 		}
-#ifdef FOR_CONTAINER
-		cp = tilde_expand_filename(options.identity_files[i], 0);
-#else
-		cp = tilde_expand_filename(options.identity_files[i], getuid());
-#endif
+		cp = xstrdup(options.identity_files[i]);
 		filename = percent_expand(cp, "d", pw->pw_dir,
 		    "u", pw->pw_name, "l", thishost, "h", host,
 		    "r", options.user, (char *)NULL);
@@ -2124,13 +2091,7 @@ load_public_identity_files(struct passwd *pw)
 	if (options.num_certificate_files > SSH_MAX_CERTIFICATE_FILES)
 		fatal("%s: too many certificates", __func__);
 	for (i = 0; i < options.num_certificate_files; i++) {
-#ifdef FOR_CONTAINER
-		cp = tilde_expand_filename(options.certificate_files[i],
-		    0);
-#else
-		cp = tilde_expand_filename(options.certificate_files[i],
-		    getuid());
-#endif
+		cp = xstrdup(options.certificate_files[i]);
 		filename = percent_expand(cp,
 		    "d", pw->pw_dir,
 		    "h", host,

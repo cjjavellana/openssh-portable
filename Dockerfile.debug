@@ -10,6 +10,6 @@ RUN chmod ugo+rwx /root && chmod ugo+rw /opt/openssh/id_rsa
 RUN cd /opt/openssh && \
 autoconf && \
 autoheader && \
-./configure --prefix=/usr && \
+CFLAGS="-g -O0" ./configure --prefix=/usr && \
 make && make install
  
