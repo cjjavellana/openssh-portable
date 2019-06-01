@@ -1,0 +1,14 @@
+FROM centos:latest
+
+RUN mkdir -p /opt/fixeduid
+
+ADD fixeduid.c /opt/fixeduid
+
+RUN yum install -y gcc make autoconf zlib-devel openssl-devel gdb openssh-clients && \
+debuginfo-install -y openssh-clients
+
+RUN chmod ugo+rwx /root 
+
+RUN cd /opt/fixeduid && \
+gcc -Wall -fPIC -shared -o fixeduid.o fixeduid.c
+

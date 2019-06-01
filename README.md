@@ -33,3 +33,8 @@ $ cd /opt/openssh && cp id_rsa /tmp && chmod 600 /tmp/id_rsa
 $ cd /opt/openssh
 $ ./scp -S ./ssh -i /tmp/id_rsa README.md <remote user>@<remote machine host or ip>:/tmp
 ```
+
+### Test GDB Commands
+```
+r /opt/fixeduid/fixeduid.o cjavellana@192.168.1.127:/tmp/temp.o
+```
