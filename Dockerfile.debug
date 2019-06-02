@@ -1,15 +1,15 @@
 FROM centos:latest
 
-RUN mkdir -p /opt/openssh
-
 ADD . /opt/openssh
 
 RUN yum install -y gcc make autoconf zlib-devel openssl-devel gdb
 RUN chmod ugo+rwx /root && chmod ugo+rw /opt/openssh/id_rsa
 
-RUN cd /opt/openssh && \
-autoconf && \
+WORKDIR /opt/openssh
+
+RUN autoconf && \
 autoheader && \
 CFLAGS="-g -O0" ./configure --prefix=/usr && \
+adduser sshd && \
 make && make install
  
