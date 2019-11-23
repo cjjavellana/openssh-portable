@@ -96,6 +96,15 @@ enum
 #ifndef IPTOS_DSCP_EF
 # define	IPTOS_DSCP_EF		0xb8
 #endif /* IPTOS_DSCP_EF */
+#ifndef IPTOS_PREC_CRITIC_ECP
+# define IPTOS_PREC_CRITIC_ECP		0xa0
+#endif
+#ifndef IPTOS_PREC_INTERNETCONTROL
+# define IPTOS_PREC_INTERNETCONTROL	0xc0
+#endif
+#ifndef IPTOS_PREC_NETCONTROL
+# define IPTOS_PREC_NETCONTROL		0xe0
+#endif
 
 #ifndef PATH_MAX
 # ifdef _POSIX_PATH_MAX
@@ -108,10 +117,6 @@ enum
 #  define MAXPATHLEN PATH_MAX
 # else /* PATH_MAX */
 #  define MAXPATHLEN 64
-/* realpath uses a fixed buffer of size MAXPATHLEN, so force use of ours */
-#  ifndef BROKEN_REALPATH
-#   define BROKEN_REALPATH 1
-#  endif /* BROKEN_REALPATH */
 # endif /* PATH_MAX */
 #endif /* MAXPATHLEN */
 
@@ -239,6 +244,9 @@ typedef unsigned short int u_int16_t;
 #  endif
 #  if (SIZEOF_INT == 4)
 typedef unsigned int u_int32_t;
+#    if defined(HAVE_DECL_UINT32_MAX) && (HAVE_DECL_UINT32_MAX == 0)
+#      define UINT32_MAX	UINT_MAX
+#    endif
 #  else
 #    error "32 bit int type not found."
 #  endif
@@ -328,6 +336,7 @@ typedef unsigned int size_t;
 
 #ifndef HAVE_SSIZE_T
 typedef int ssize_t;
+#define SSIZE_MAX INT_MAX
 # define HAVE_SSIZE_T
 #endif /* HAVE_SSIZE_T */
 
@@ -834,9 +843,10 @@ struct winsize {
 /*
  * We want functions in openbsd-compat, if enabled, to override system ones.
  * We no-op out the weak symbol definition rather than remove it to reduce
- * future sync problems.
+ * future sync problems.  Some compilers (eg Unixware) do not allow an
+ * empty statement, so we use a bogus function declaration.
  */
-#define DEF_WEAK(x)
+#define DEF_WEAK(x)	void __ssh_compat_weak_##x(void)
 
 /*
  * Platforms that have arc4random_uniform() and not arc4random_stir()

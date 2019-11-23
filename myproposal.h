@@ -1,4 +1,4 @@
-/* $OpenBSD: myproposal.h,v 1.57 2018/09/12 01:34:02 djm Exp $ */
+/* $OpenBSD: myproposal.h,v 1.61 2019/11/12 19:33:08 markus Exp $ */
 
 /*
  * Copyright (c) 2000 Markus Friedl.  All rights reserved.
@@ -24,40 +24,48 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef WITH_OPENSSL
 #include <openssl/opensslv.h>
+#endif
 
 /* conditional algorithm support */
 
 #ifdef OPENSSL_HAS_ECC
-#ifdef OPENSSL_HAS_NISTP521
-# define KEX_ECDH_METHODS \
+# ifdef OPENSSL_HAS_NISTP521
+#  define KEX_ECDH_METHODS \
 	"ecdh-sha2-nistp256," \
 	"ecdh-sha2-nistp384," \
 	"ecdh-sha2-nistp521,"
-# define HOSTKEY_ECDSA_CERT_METHODS \
+#  define HOSTKEY_ECDSA_CERT_METHODS \
 	"ecdsa-sha2-nistp256-cert-v01@openssh.com," \
 	"ecdsa-sha2-nistp384-cert-v01@openssh.com," \
 	"ecdsa-sha2-nistp521-cert-v01@openssh.com,"
-# define HOSTKEY_ECDSA_METHODS \
+#  define HOSTKEY_ECDSA_METHODS \
 	"ecdsa-sha2-nistp256," \
 	"ecdsa-sha2-nistp384," \
 	"ecdsa-sha2-nistp521,"
-#else
-# define KEX_ECDH_METHODS \
+# else /* OPENSSL_HAS_NISTP521 */
+#  define KEX_ECDH_METHODS \
 	"ecdh-sha2-nistp256," \
 	"ecdh-sha2-nistp384,"
-# define HOSTKEY_ECDSA_CERT_METHODS \
+#  define HOSTKEY_ECDSA_CERT_METHODS \
 	"ecdsa-sha2-nistp256-cert-v01@openssh.com," \
 	"ecdsa-sha2-nistp384-cert-v01@openssh.com,"
-# define HOSTKEY_ECDSA_METHODS \
+#  define HOSTKEY_ECDSA_METHODS \
 	"ecdsa-sha2-nistp256," \
 	"ecdsa-sha2-nistp384,"
-#endif
-#else
+# endif /* OPENSSL_HAS_NISTP521 */
+# define USERKEY_ECDSA_SK_CERT_METHODS \
+	"sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,"
+# define USERKEY_ECDSA_SK_METHODS \
+	"sk-ecdsa-sha2-nistp256@openssh.com,"
+#else /* OPENSSL_HAS_ECC */
 # define KEX_ECDH_METHODS
 # define HOSTKEY_ECDSA_CERT_METHODS
 # define HOSTKEY_ECDSA_METHODS
-#endif
+# define USERKEY_ECDSA_SK_CERT_METHODS
+# define USERKEY_ECDSA_SK_METHODS
+#endif /* OPENSSL_HAS_ECC */
 
 #ifdef OPENSSL_HAVE_EVPGCM
 # define AESGCM_CIPHER_MODES \
@@ -90,19 +98,14 @@
 # else
 #  define KEX_CURVE25519_METHODS ""
 # endif
-#define KEX_COMMON_KEX \
+#define KEX_SERVER_KEX \
 	KEX_CURVE25519_METHODS \
 	KEX_ECDH_METHODS \
-	KEX_SHA2_METHODS
-
-#define KEX_SERVER_KEX KEX_COMMON_KEX \
-	KEX_SHA2_GROUP14 \
-	"diffie-hellman-group14-sha1" \
-
-#define KEX_CLIENT_KEX KEX_COMMON_KEX \
-	"diffie-hellman-group-exchange-sha1," \
+	KEX_SHA2_METHODS \
 	KEX_SHA2_GROUP14 \
 	"diffie-hellman-group14-sha1"
+
+#define KEX_CLIENT_KEX KEX_SERVER_KEX
 
 #define	KEX_DEFAULT_PK_ALG	\
 	HOSTKEY_ECDSA_CERT_METHODS \
@@ -141,9 +144,23 @@
 
 /* Not a KEX value, but here so all the algorithm defaults are together */
 #define	SSH_ALLOWED_CA_SIGALGS	\
-	"ecdsa-sha2-nistp256," \
-	"ecdsa-sha2-nistp384," \
-	"ecdsa-sha2-nistp521," \
+	HOSTKEY_ECDSA_METHODS \
+	"ssh-ed25519," \
+	"rsa-sha2-512," \
+	"rsa-sha2-256," \
+	"ssh-rsa"
+
+#define	PUBKEY_DEFAULT_PK_ALG	\
+	USERKEY_ECDSA_SK_CERT_METHODS \
+	HOSTKEY_ECDSA_CERT_METHODS \
+	"sk-ssh-ed25519-cert-v01@openssh.com," \
+	"ssh-ed25519-cert-v01@openssh.com," \
+	"rsa-sha2-512-cert-v01@openssh.com," \
+	"rsa-sha2-256-cert-v01@openssh.com," \
+	"ssh-rsa-cert-v01@openssh.com," \
+	USERKEY_ECDSA_SK_METHODS \
+	HOSTKEY_ECDSA_METHODS \
+	"sk-ssh-ed25519@openssh.com," \
 	"ssh-ed25519," \
 	"rsa-sha2-512," \
 	"rsa-sha2-256," \
@@ -157,6 +174,7 @@
 #define	KEX_DEFAULT_PK_ALG	\
 	"ssh-ed25519-cert-v01@openssh.com," \
 	"ssh-ed25519"
+#define PUBKEY_DEFAULT_PK_ALG KEX_DEFAULT_PK_ALG
 #define	KEX_SERVER_ENCRYPT \
 	"chacha20-poly1305@openssh.com," \
 	"aes128-ctr,aes192-ctr,aes256-ctr"

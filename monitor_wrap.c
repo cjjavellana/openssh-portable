@@ -1,4 +1,4 @@
-/* $OpenBSD: monitor_wrap.c,v 1.112 2019/01/21 09:54:11 djm Exp $ */
+/* $OpenBSD: monitor_wrap.c,v 1.115 2019/11/18 16:10:05 naddy Exp $ */
 /*
  * Copyright 2002 Niels Provos <provos@citi.umich.edu>
  * Copyright 2002 Markus Friedl <markus@openbsd.org>
@@ -215,7 +215,8 @@ mm_choose_dh(int min, int nbits, int max)
 
 int
 mm_sshkey_sign(struct ssh *ssh, struct sshkey *key, u_char **sigp, size_t *lenp,
-    const u_char *data, size_t datalen, const char *hostkey_alg, u_int compat)
+    const u_char *data, size_t datalen, const char *hostkey_alg,
+    const char *sk_provider, u_int compat)
 {
 	struct kex *kex = *pmonitor->m_pkex;
 	struct sshbuf *m;
@@ -223,7 +224,8 @@ mm_sshkey_sign(struct ssh *ssh, struct sshkey *key, u_char **sigp, size_t *lenp,
 	int r;
 
 	debug3("%s entering", __func__);
-
+	if (sk_provider != NULL)
+		fatal("%s: sk_provider != NULL", __func__);
 	if ((m = sshbuf_new()) == NULL)
 		fatal("%s: sshbuf_new failed", __func__);
 	if ((r = sshbuf_put_u32(m, ndx)) != 0 ||
@@ -612,7 +614,7 @@ mm_session_pty_cleanup2(Session *s)
 	sshbuf_free(m);
 
 	/* closed dup'ed master */
-	if (s->ptymaster != -1 && close(s->ptymaster) < 0)
+	if (s->ptymaster != -1 && close(s->ptymaster) == -1)
 		error("close(s->ptymaster/%d): %s",
 		    s->ptymaster, strerror(errno));
 

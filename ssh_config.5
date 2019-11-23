@@ -33,8 +33,8 @@
 .\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
-.\" $OpenBSD: ssh_config.5,v 1.289 2019/01/22 11:51:25 djm Exp $
-.Dd $Mdocdate: January 22 2019 $
+.\" $OpenBSD: ssh_config.5,v 1.309 2019/11/18 23:17:48 naddy Exp $
+.Dd $Mdocdate: November 18 2019 $
 .Dt SSH_CONFIG 5
 .Os
 .Sh NAME
@@ -361,7 +361,7 @@ Specifies which algorithms are allowed for signing of certificates
 by certificate authorities (CAs).
 The default is:
 .Bd -literal -offset indent
-ecdsa-sha2-nistp256.ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
+ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
 ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
@@ -381,7 +381,9 @@ flag to
 via
 .Xr ssh-agent 1 ,
 or via a
-.Cm PKCS11Provider .
+.Cm PKCS11Provider
+or
+.Cm SecurityKeyProvider .
 .Pp
 Arguments to
 .Cm CertificateFile
@@ -422,14 +424,18 @@ the check will not be executed.
 .It Cm Ciphers
 Specifies the ciphers allowed and their order of preference.
 Multiple ciphers must be comma-separated.
-If the specified value begins with a
+If the specified list begins with a
 .Sq +
 character, then the specified ciphers will be appended to the default set
 instead of replacing them.
-If the specified value begins with a
+If the specified list begins with a
 .Sq -
 character, then the specified ciphers (including wildcards) will be removed
 from the default set instead of replacing them.
+If the specified list begins with a
+.Sq ^
+character, then the specified ciphers will be placed at the head of the
+default set.
 .Pp
 The supported ciphers are:
 .Bd -literal -offset indent
@@ -485,8 +491,8 @@ The default is 1.
 .It Cm ConnectTimeout
 Specifies the timeout (in seconds) used when connecting to the
 SSH server, instead of using the default system TCP timeout.
-This value is used only when the target is down or really unreachable,
-not when it refuses the connection.
+This timeout is applied both to establishing the connection and to performing
+the initial SSH protocol handshake and key exchange.
 .It Cm ControlMaster
 Enables the sharing of multiple sessions over a single network connection.
 When set to
@@ -786,21 +792,26 @@ or
 .It Cm HostbasedKeyTypes
 Specifies the key types that will be used for hostbased authentication
 as a comma-separated list of patterns.
-Alternately if the specified value begins with a
+Alternately if the specified list begins with a
 .Sq +
 character, then the specified key types will be appended to the default set
 instead of replacing them.
-If the specified value begins with a
+If the specified list begins with a
 .Sq -
 character, then the specified key types (including wildcards) will be removed
 from the default set instead of replacing them.
+If the specified list begins with a
+.Sq ^
+character, then the specified key types will be placed at the head of the
+default set.
 The default for this option is:
 .Bd -literal -offset 3n
 ecdsa-sha2-nistp256-cert-v01@openssh.com,
 ecdsa-sha2-nistp384-cert-v01@openssh.com,
 ecdsa-sha2-nistp521-cert-v01@openssh.com,
 ssh-ed25519-cert-v01@openssh.com,
-rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,
+rsa-sha2-512-cert-v01@openssh.com,
+rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
 ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
 ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa
@@ -814,21 +825,26 @@ may be used to list supported key types.
 .It Cm HostKeyAlgorithms
 Specifies the host key algorithms
 that the client wants to use in order of preference.
-Alternately if the specified value begins with a
+Alternately if the specified list begins with a
 .Sq +
 character, then the specified key types will be appended to the default set
 instead of replacing them.
-If the specified value begins with a
+If the specified list begins with a
 .Sq -
 character, then the specified key types (including wildcards) will be removed
 from the default set instead of replacing them.
+If the specified list begins with a
+.Sq ^
+character, then the specified key types will be placed at the head of the
+default set.
 The default for this option is:
 .Bd -literal -offset 3n
 ecdsa-sha2-nistp256-cert-v01@openssh.com,
 ecdsa-sha2-nistp384-cert-v01@openssh.com,
 ecdsa-sha2-nistp521-cert-v01@openssh.com,
 ssh-ed25519-cert-v01@openssh.com,
-rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,
+rsa-sha2-512-cert-v01@openssh.com,
+rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
 ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
 ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa
@@ -845,32 +861,34 @@ real host name when looking up or saving the host key
 in the host key database files and when validating host certificates.
 This option is useful for tunneling SSH connections
 or for multiple servers running on a single host.
-.It Cm HostName
+.It Cm Hostname
 Specifies the real host name to log into.
 This can be used to specify nicknames or abbreviations for hosts.
 Arguments to
-.Cm HostName
+.Cm Hostname
 accept the tokens described in the
 .Sx TOKENS
 section.
 Numeric IP addresses are also permitted (both on the command line and in
-.Cm HostName
+.Cm Hostname
 specifications).
 The default is the name given on the command line.
 .It Cm IdentitiesOnly
 Specifies that
 .Xr ssh 1
-should only use the authentication identity and certificate files explicitly
-configured in the
+should only use the configured authentication identity and certificate files
+(either the default files, or those explicitly configured in the
 .Nm
 files
 or passed on the
 .Xr ssh 1
-command-line,
+command-line),
 even if
 .Xr ssh-agent 1
 or a
 .Cm PKCS11Provider
+or
+.Cm SecurityKeyProvider
 offers more identities.
 The argument to this keyword must be
 .Cm yes
@@ -907,12 +925,14 @@ or the tokens described in the
 .Sx TOKENS
 section.
 .It Cm IdentityFile
-Specifies a file from which the user's DSA, ECDSA, Ed25519 or RSA authentication
-identity is read.
+Specifies a file from which the user's DSA, ECDSA, security key-hosted ECDSA,
+Ed25519 or RSA authentication identity is read.
 The default is
 .Pa ~/.ssh/id_dsa ,
 .Pa ~/.ssh/id_ecdsa ,
-.Pa ~/.ssh/id_ed25519
+.Pa ~/.ssh/id_ecdsa_sk ,
+.Pa ~/.ssh/id_ed25519 ,
+.Pa ~/.ssh/id_ed25519_sk
 and
 .Pa ~/.ssh/id_rsa .
 Additionally, any identities represented by the authentication agent
@@ -1043,14 +1063,18 @@ and
 .It Cm KexAlgorithms
 Specifies the available KEX (Key Exchange) algorithms.
 Multiple algorithms must be comma-separated.
-Alternately if the specified value begins with a
+If the specified list begins with a
 .Sq +
 character, then the specified methods will be appended to the default set
 instead of replacing them.
-If the specified value begins with a
+If the specified list begins with a
 .Sq -
 character, then the specified methods (including wildcards) will be removed
 from the default set instead of replacing them.
+If the specified list begins with a
+.Sq ^
+character, then the specified methods will be placed at the head of the
+default set.
 The default is:
 .Bd -literal -offset indent
 curve25519-sha256,curve25519-sha256@libssh.org,
@@ -1058,7 +1082,6 @@ ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,
 diffie-hellman-group-exchange-sha256,
 diffie-hellman-group16-sha512,
 diffie-hellman-group18-sha512,
-diffie-hellman-group-exchange-sha1,
 diffie-hellman-group14-sha256,
 diffie-hellman-group14-sha1
 .Ed
@@ -1125,14 +1148,18 @@ Specifies the MAC (message authentication code) algorithms
 in order of preference.
 The MAC algorithm is used for data integrity protection.
 Multiple algorithms must be comma-separated.
-If the specified value begins with a
+If the specified list begins with a
 .Sq +
 character, then the specified algorithms will be appended to the default set
 instead of replacing them.
-If the specified value begins with a
+If the specified list begins with a
 .Sq -
 character, then the specified algorithms (including wildcards) will be removed
 from the default set instead of replacing them.
+If the specified list begins with a
+.Sq ^
+character, then the specified algorithms will be placed at the head of the
+default set.
 .Pp
 The algorithms that contain
 .Qq -etm
@@ -1181,11 +1208,13 @@ or
 .Cm no
 (the default).
 .It Cm PKCS11Provider
-Specifies which PKCS#11 provider to use.
-The argument to this keyword is the PKCS#11 shared library
+Specifies which PKCS#11 provider to use or
+.Cm none
+to indicate that no provider should be used (the default).
+The argument to this keyword is a path to the PKCS#11 shared library
 .Xr ssh 1
-should use to communicate with a PKCS#11 token providing the user's
-private RSA key.
+should use to communicate with a PKCS#11 token providing keys for user
+authentication.
 .It Cm Port
 Specifies the port number to connect on the remote host.
 The default is 22.
@@ -1221,8 +1250,8 @@ server running on some machine, or execute
 .Ic sshd -i
 somewhere.
 Host key management will be done using the
-HostName of the host being connected (defaulting to the name typed by
-the user).
+.Cm Hostname
+of the host being connected (defaulting to the name typed by the user).
 Setting the command to
 .Cm none
 disables this option entirely.
@@ -1280,23 +1309,32 @@ The default is
 .It Cm PubkeyAcceptedKeyTypes
 Specifies the key types that will be used for public key authentication
 as a comma-separated list of patterns.
-Alternately if the specified value begins with a
+If the specified list begins with a
 .Sq +
 character, then the key types after it will be appended to the default
 instead of replacing it.
-If the specified value begins with a
+If the specified list begins with a
 .Sq -
 character, then the specified key types (including wildcards) will be removed
 from the default set instead of replacing them.
+If the specified list begins with a
+.Sq ^
+character, then the specified key types will be placed at the head of the
+default set.
 The default for this option is:
 .Bd -literal -offset 3n
+sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,
 ecdsa-sha2-nistp256-cert-v01@openssh.com,
 ecdsa-sha2-nistp384-cert-v01@openssh.com,
 ecdsa-sha2-nistp521-cert-v01@openssh.com,
+sk-ssh-ed25519-cert-v01@openssh.com,
 ssh-ed25519-cert-v01@openssh.com,
-rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,
+rsa-sha2-512-cert-v01@openssh.com,
+rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
+sk-ecdsa-sha2-nistp256@openssh.com,
 ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
+sk-ssh-ed25519@openssh.com,
 ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
@@ -1325,9 +1363,7 @@ and
 .Sq 4G ,
 depending on the cipher.
 The optional second value is specified in seconds and may use any of the
-units documented in the
-.Sx TIME FORMATS
-section of
+units documented in the TIME FORMATS section of
 .Xr sshd_config 5 .
 The default value for
 .Cm RekeyLimit
@@ -1414,6 +1450,15 @@ an OpenSSH Key Revocation List (KRL) as generated by
 .Xr ssh-keygen 1 .
 For more information on KRLs, see the KEY REVOCATION LISTS section in
 .Xr ssh-keygen 1 .
+.It Cm SecurityKeyProvider
+Specifies a path to a security key provider library that will be used when
+loading any security key-hosted keys, overriding the default of using
+the built-in support for USB HID keys.
+.Pp
+If the specified value begins with a
+.Sq $
+character, then it will be treated as an environment variable containing
+the path to the library.
 .It Cm SendEnv
 Specifies what variables from the local
 .Xr environ 7
@@ -1461,7 +1506,7 @@ The TCP keepalive option enabled by
 .Cm TCPKeepAlive
 is spoofable.
 The server alive mechanism is valuable when the client or
-server depend on knowing when a connection has become inactive.
+server depend on knowing when a connection has become unresponsive.
 .Pp
 The default value is 3.
 If, for example,
@@ -1786,7 +1831,7 @@ accepts the tokens %%, %d, %h, %i, %l, %r, and %u.
 .Cm ControlPath
 accepts the tokens %%, %C, %h, %i, %L, %l, %n, %p, %r, and %u.
 .Pp
-.Cm HostName
+.Cm Hostname
 accepts the tokens %% and %h.
 .Pp
 .Cm IdentityAgent
@@ -1798,7 +1843,7 @@ accept the tokens %%, %d, %h, %i, %l, %r, and %u.
 accepts the tokens %%, %C, %d, %h, %i, %l, %n, %p, %r, %T, and %u.
 .Pp
 .Cm ProxyCommand
-accepts the tokens %%, %h, %p, and %r.
+accepts the tokens %%, %h, %n, %p, and %r.
 .Pp
 .Cm RemoteCommand
 accepts the tokens %%, %C, %d, %h, %i, %l, %n, %p, %r, and %u.
@@ -1809,7 +1854,7 @@ This is the per-user configuration file.
 The format of this file is described above.
 This file is used by the SSH client.
 Because of the potential for abuse, this file must have strict permissions:
-read/write for the user, and not accessible by others.
+read/write for the user, and not writable by others.
 .It Pa /etc/ssh/ssh_config
 Systemwide configuration file.
 This file provides defaults for those
